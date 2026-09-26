@@ -1,0 +1,81 @@
+# Example configuration for Callejero Question Generator
+
+project:
+  schema_version: 1
+
+sources:
+  espacios_pdf: data/source/EspaciosCirculatorios.pdf
+  hitos_pdf: data/source/Hitos.pdf
+  sample_exam_pdf: data/source/sample_exam.pdf
+
+osm:
+  pbf_path: data/osm/madrid-region.osm.pbf
+  snapshot_date: null
+  include_turn_restrictions: true
+
+routing:
+  cost: estimated_time
+  candidate_count: 15
+  use_live_traffic: false
+
+speed_defaults_kmh:
+  motorway: 100
+  motorway_link: 60
+  trunk: 80
+  trunk_link: 50
+  primary: 50
+  primary_link: 40
+  secondary: 50
+  secondary_link: 40
+  tertiary: 40
+  tertiary_link: 30
+  residential: 30
+  unclassified: 30
+  service: 20
+
+projection:
+  max_hidden_distance_ratio: 0.30
+  minimum_displayed_espacios: 6
+  collapse_consecutive_duplicates: true
+  keep_non_consecutive_duplicates: true
+
+difficulty:
+  easy:
+    min_espacios: 6
+    max_espacios: 9
+  medium:
+    min_espacios: 10
+    max_espacios: 14
+  hard:
+    min_espacios: 15
+    max_espacios: null
+  target_mix:
+    easy: 0.25
+    medium: 0.50
+    hard: 0.25
+
+alternatives:
+  min_overlap_ratio: 0.30
+  max_overlap_ratio: 0.75
+
+fastest_route:
+  min_advantage_ratio: 0.05
+  min_advantage_seconds: 30
+  require_both_thresholds: true
+
+normal_question:
+  preferred_distractor_failures:
+    - DISCONNECTED_TRANSITION
+    - WRONG_DIRECTION
+    - PROHIBITED_TURN
+
+review:
+  manual_approval_required: true
+
+export:
+  path: data/exports/callejero_questions.sqlite
+  only_status: APPROVED
+
+generation:
+  deterministic: true
+  random_seed: 26092026
