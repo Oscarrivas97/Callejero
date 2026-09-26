@@ -122,3 +122,7 @@ callejero-generator/
 15. Export approved SQLite DB for the mobile app.
 
 See `docs/PRODUCT_SPEC.md` for the complete requirements.
+
+## Current implementation
+
+The Python tool now includes direct extraction of the supplied Espacios and Hitos PDF tables, a 30-question unscored exam fixture, SQLite setup, optional reviewed CSV imports, conservative Espacio name resolution, physical-to-exam route projection, a directed-graph constrained-path validator, question-level rule checks, manual review transitions, and approved-only app export. OSM extraction, Hito geocoding, candidate generation, and map review are next stages. See [setup instructions](docs/SETUP.md) for reproducible installation and CLI usage.
