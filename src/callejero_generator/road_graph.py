@@ -173,6 +173,56 @@ def validate_option(graph: GraphLike, origin: str, destination: str,
     return PathResult("INVALID", "NO_LEGAL_PATH", (), None, None)
 
 
+def shortest_physical_route(graph: GraphLike, origin: str, destination: str,
+                            *, max_states: int = 300_000) -> PathResult:
+    """Find a legal minimum-time physical route without an Espacio constraint."""
+    if max_states < 1:
+        raise ValueError("max_states must be positive")
+    start: tuple[str, str | None] = (origin, None)
+    best = {start: 0.0}
+    predecessor: dict[tuple[str, str | None], tuple[tuple[str, str | None], str]] = {}
+    serial = itertools.count()
+    queue: list[tuple[float, int, tuple[str, str | None]]] = [(0.0, next(serial), start)]
+    visited = 0
+    saw_uncertain_turn = False
+    while queue:
+        cost, _, state = heapq.heappop(queue)
+        if cost > best[state]:
+            continue
+        visited += 1
+        if visited > max_states:
+            return PathResult("INDETERMINATE", "SEARCH_LIMIT", (), None, None)
+        node, incoming_id = state
+        if node == destination:
+            ids: list[str] = []
+            cursor = state
+            while cursor != start:
+                cursor, edge_id = predecessor[cursor]
+                ids.append(edge_id)
+            ids.reverse()
+            distance = 0.0
+            for edge_id in ids:
+                path_edge = graph.get_edge(edge_id)
+                assert path_edge is not None
+                distance += path_edge.length_m
+            return PathResult("VALID", None, tuple(ids), distance, cost)
+        for edge in graph.iter_outgoing(node):
+            if incoming_id is not None and graph.is_turn_uncertain(incoming_id, edge.edge_id):
+                saw_uncertain_turn = True
+                continue
+            if incoming_id is not None and graph.is_forbidden(incoming_id, edge.edge_id):
+                continue
+            target = (edge.to_node, edge.edge_id)
+            next_cost = cost + graph.travel_time_s(edge)
+            if next_cost < best.get(target, float("inf")):
+                best[target] = next_cost
+                predecessor[target] = (state, edge.edge_id)
+                heapq.heappush(queue, (next_cost, next(serial), target))
+    reason = "UNSUPPORTED_RESTRICTION" if saw_uncertain_turn else "NO_LEGAL_PATH"
+    status = "INDETERMINATE" if saw_uncertain_turn else "INVALID"
+    return PathResult(status, reason, (), None, None)
+
+
 def _advance(sequence: tuple[int, ...], index: int, espacio_id: int | None) -> int | None:
     if espacio_id is None:
         return index

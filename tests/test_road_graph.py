@@ -1,7 +1,9 @@
+from callejero_generator.preview import build_preview_question
 from callejero_generator.road_graph import (
     RoadEdge,
     RoadGraph,
     parse_maxspeed_kmh,
+    shortest_physical_route,
     validate_option,
     validate_physical_path,
 )
@@ -59,3 +61,24 @@ def test_speed_parsing_and_fallback():
     assert parse_maxspeed_kmh("ES:urban") is None
     graph = RoadGraph({"residential": 30})
     assert graph.travel_time_s(RoadEdge("a", "o", "d", 100, "residential", "bad")) == 12
+
+
+def test_preview_builds_one_valid_question_and_rejects_swapped_streets():
+    graph = RoadGraph({"residential": 30})
+    for index in range(9):
+        graph.add_edge(RoadEdge(str(index), str(index), str(index + 1), 100,
+                                "residential", espacio_id=index + 1))
+    route = shortest_physical_route(graph, "0", "9")
+    assert route.status == "VALID"
+    assert route.edge_ids == tuple(str(index) for index in range(9))
+    question = build_preview_question(
+        graph, origin_id=1, destination_id=2, origin_name="Inicio",
+        destination_name="Final", origin_node="0", destination_node="9",
+        origin_snap_m=5, destination_snap_m=7,
+        quality=QualitySettings(6, 0.05, 30), max_hidden_ratio=0.30,
+        easy_max=9, medium_max=14, random_seed=42,
+    )
+    assert question is not None
+    assert question.difficulty == "EASY"
+    assert question.options[question.correct_option] == tuple(range(1, 10))
+    assert sorted(question.option_status.values()) == ["INVALID", "INVALID", "VALID"]

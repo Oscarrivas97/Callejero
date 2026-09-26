@@ -10,6 +10,7 @@ from .db import connect, init_db
 from .importers import import_espacios, import_hitos
 from .osm_import import build_osm_graph
 from .pdf_sources import import_pdf_sources
+from .preview import write_preview
 from .resolution import approve_alias, resolve
 from .review import export_approved, review_question
 from .road_graph import validate_option
@@ -48,6 +49,10 @@ def main(argv: list[str] | None = None) -> int:
     option_check.add_argument("destination_node")
     option_check.add_argument("espacio_ids", help="Comma-separated canonical Espacio IDs")
     option_check.add_argument("--graph", default="data/working/madrid_graph.sqlite")
+    preview = commands.add_parser("generate-preview", help="Generate unapproved Hito route questions")
+    preview.add_argument("--seed", default="config/preview_hitos.yaml")
+    preview.add_argument("--graph", default="data/working/madrid_graph.sqlite")
+    preview.add_argument("--output-prefix", default="data/working/question_preview")
     lookup = commands.add_parser("resolve", help="Resolve an OSM street name")
     lookup.add_argument("name")
     alias = commands.add_parser("approve-alias", help="Save a reviewed Espacio alias")
@@ -93,6 +98,14 @@ def main(argv: list[str] | None = None) -> int:
                                      snapshot_date=osm.snapshot_date if args.pbf is None else "",
                                      expected_sha256=osm.sha256 if args.pbf is None else None)
             print(json.dumps(asdict(report), ensure_ascii=False))
+        elif args.command == "generate-preview":
+            with SQLiteRoadGraph(args.graph, load_speed_defaults(args.config)) as graph:
+                metadata = {row["key"]: row["value"] for row in graph.connection.execute(
+                    "SELECT key, value FROM metadata"
+                )}
+                questions = write_preview(database, graph, metadata, args.seed,
+                                          args.config, args.output_prefix)
+            print(f"Generated {len(questions)} provisional questions at {args.output_prefix}.md")
         elif args.command == "resolve":
             print(json.dumps(resolve(database, args.name).__dict__, ensure_ascii=False))
         elif args.command == "approve-alias":

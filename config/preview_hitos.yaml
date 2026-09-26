@@ -1,0 +1,35 @@
+# Provisional attachments for an inspectable question preview.
+# Exact OSM POI name matches were checked against the Hitos addresses.
+# Road nodes still require manual access/entrance review before approval.
+hitos:
+  Museo Arqueológico Nacional:
+    osm_poi_node: 255288522
+    latitude: 40.4234289
+    longitude: -3.6888894
+    road_node: 9054521334
+  Cines Verdi:
+    osm_poi_node: 1016578413
+    latitude: 40.4365689
+    longitude: -3.7040780
+    road_node: 8441812509
+  Teatro Español:
+    osm_poi_node: 622204624
+    latitude: 40.4148650
+    longitude: -3.7001523
+    road_node: 21968344
+  Teatro Maravillas:
+    osm_poi_node: 267588624
+    latitude: 40.4286897
+    longitude: -3.7032629
+    road_node: 8593662596
+  Ministerio de Sanidad:
+    osm_poi_node: 13190668842
+    latitude: 40.4133820
+    longitude: -3.6942592
+    road_node: 12323475531
+
+pairs:
+  - [Museo Arqueológico Nacional, Cines Verdi]
+  - [Teatro Español, Teatro Maravillas]
+  - [Teatro Maravillas, Ministerio de Sanidad]
+  - [Teatro Español, Cines Verdi]

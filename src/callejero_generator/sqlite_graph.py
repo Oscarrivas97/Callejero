@@ -90,3 +90,9 @@ class SQLiteRoadGraph:
         if speed is None or speed <= 0:
             raise ValueError(f"No usable speed for highway class {edge.highway}")
         return edge.length_m * 3.6 / speed
+
+    def node_coordinates(self, node: str) -> tuple[float, float] | None:
+        row = self.connection.execute(
+            "SELECT latitude, longitude FROM nodes WHERE node_id=?", (int(node),)
+        ).fetchone()
+        return (row["latitude"], row["longitude"]) if row is not None else None
