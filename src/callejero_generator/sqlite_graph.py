@@ -21,6 +21,13 @@ class SQLiteRoadGraph:
             )
             for way_id in json.loads(row[0])
         }
+        self.uncertain_via_nodes = {
+            int(node_id)
+            for row in self.connection.execute(
+                "SELECT affected_via_nodes_json FROM unsupported_restrictions"
+            )
+            for node_id in json.loads(row[0])
+        }
         self._edge_cached = lru_cache(maxsize=200_000)(self._query_edge)
         self._outgoing_cached = lru_cache(maxsize=100_000)(self._query_outgoing)
         self._forbidden_cached = lru_cache(maxsize=200_000)(self._query_forbidden)
@@ -68,6 +75,10 @@ class SQLiteRoadGraph:
         ).fetchone() is not None
 
     def is_turn_uncertain(self, incoming_id: str, outgoing_id: str) -> bool:
+        if self.uncertain_via_nodes:
+            incoming = self.get_edge(incoming_id)
+            if incoming is not None and int(incoming.to_node) in self.uncertain_via_nodes:
+                return True
         if not self.uncertain_way_ids:
             return False
         incoming_way = int(incoming_id.split(":", 1)[0])

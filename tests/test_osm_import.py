@@ -63,7 +63,15 @@ def test_osm_xml_build_connects_sqlite_validator(tmp_path):
     with sqlite3.connect(graph_path) as db:
         assert db.execute("SELECT value FROM metadata WHERE key='pbf_sha256'").fetchone()[0]
         db.execute("""INSERT INTO unsupported_restrictions
-                    (relation_id, restriction, reason, affected_way_ids_json)
-                    VALUES (200, 'no_right_turn', 'VIA_WAY', '[10]')""")
+                    (relation_id, restriction, reason, affected_way_ids_json,
+                     affected_via_nodes_json)
+                    VALUES (200, 'no_right_turn', 'VIA_WAY', '[10]', '[]')""")
     with SQLiteRoadGraph(graph_path, {"residential": 30}) as graph:
         assert validate_option(graph, "1", "3", (1, 3, 4)).status == "INDETERMINATE"
+    with sqlite3.connect(graph_path) as db:
+        db.execute("""INSERT INTO unsupported_restrictions
+                    (relation_id, restriction, reason, affected_way_ids_json,
+                     affected_via_nodes_json)
+                    VALUES (201, 'no_u_turn', 'UNSUPPORTED_MEMBERS', '[]', '[2]')""")
+    with SQLiteRoadGraph(graph_path, {"residential": 30}) as graph:
+        assert graph.is_turn_uncertain("10:0:F", "20:0:F")

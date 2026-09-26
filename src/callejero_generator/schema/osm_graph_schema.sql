@@ -32,5 +32,6 @@ CREATE TABLE unsupported_restrictions (
     relation_id INTEGER PRIMARY KEY,
     restriction TEXT,
     reason TEXT NOT NULL,
-    affected_way_ids_json TEXT NOT NULL
+    affected_way_ids_json TEXT NOT NULL,
+    affected_via_nodes_json TEXT NOT NULL
 );

@@ -213,9 +213,11 @@ def _materialize_restrictions(database: sqlite3.Connection,
         if reason:
             database.execute(
                 """INSERT INTO unsupported_restrictions
-                   (relation_id, restriction, reason, affected_way_ids_json)
-                   VALUES (?, ?, ?, ?)""",
-                (relation.relation_id, relation.kind, reason, json.dumps(from_ways)),
+                   (relation_id, restriction, reason, affected_way_ids_json,
+                    affected_via_nodes_json)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (relation.relation_id, relation.kind, reason, json.dumps(from_ways),
+                 json.dumps(via_nodes)),
             )
             continue
         via = via_nodes[0]
