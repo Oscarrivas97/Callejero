@@ -43,3 +43,5 @@ The current build contains 850,265 nodes, 1,361,464 directed edges, 151,521 edge
 The importer streams the PBF with Pyosmium. It creates directed segments for drivable OSM ways, applies one-way rules, estimates distance from node coordinates, maps unambiguous street names to canonical Espacios, and materializes node-based `no_*` and `only_*` turn restrictions. The SQLite validator searches for a legal path whose Espacio projection matches the displayed sequence exactly.
 
 Via-way and unsupported restriction relations are recorded. Searches that depend on turns from their affected ways or at their identified junction nodes return `INDETERMINATE` rather than a valid answer. Conditional access and complex vehicle-specific rules still need dedicated handling. The graph is therefore useful for validation development and diagnostics; it is not yet a basis for approving production questions.
+
+See [turn-restriction follow-up](OSM_RESTRICTIONS_BACKLOG.md) for the audited categories, implementation order, and acceptance checks.
