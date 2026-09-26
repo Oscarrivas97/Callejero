@@ -9,8 +9,10 @@ sources:
   sample_exam_pdf: assets/SIMULACRO_CALLEJERO_BOMBERO_CONDUCTOR_SEPTIEMBRE_2026.pdf
 
 osm:
-  pbf_path: data/osm/madrid-region.osm.pbf
-  snapshot_date: null
+  pbf_path: data/osm/madrid-260923.osm.pbf
+  source_url: https://download.geofabrik.de/europe/spain/madrid-260923.osm.pbf
+  sha256: 648edee38a0f1eb1fbb4ff6478468bc3388565fff2975f258fa7a9b812752ee9
+  snapshot_date: '2026-09-23T20:22:04Z'
   include_turn_restrictions: true
 
 routing:
@@ -32,6 +34,7 @@ speed_defaults_kmh:
   residential: 30
   unclassified: 30
   service: 20
+  living_street: 15
 
 projection:
   max_hidden_distance_ratio: 0.30

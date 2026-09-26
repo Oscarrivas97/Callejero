@@ -1,6 +1,6 @@
 # Reproducing the development setup
 
-The three source PDFs are available locally in `assets/` and are ignored by Git. A fresh clone needs those same files placed at the paths in `config/generator.example.yaml`. The Madrid OSM extract is still absent. Do not commit source data or generated databases.
+The three source PDFs are available locally in `assets/` and are ignored by Git. A fresh clone needs those same files placed at the paths in `config/generator.example.yaml`. The Madrid OSM extract can be downloaded using [the pinned graph instructions](OSM.md). Do not commit source data or generated databases.
 
 ## Python environment
 
@@ -27,6 +27,12 @@ The PDF importer reads the actual Hitos and Espacios tables, checks row shape an
 ```
 
 The current PDFs yield 2,934 Espacios, 517 Hitos, and 30 unscored sample-exam questions. The exam JSON is written to `data/working/sample_exam.json`; it retains prompt and option text plus heuristic component splits. The exam contains emergency-driving and intersection questions outside V1 scope, and has no answer key in the supplied PDF. It is a style and regression source only.
+
+Build the offline road graph after import:
+
+```bash
+.venv/bin/callejero build-osm-graph
+```
 
 You can override source paths with `--espacios` and `--hitos` on `import-pdfs`, or `--pdf` on `extract-exam`. The default paths come from the YAML config. Repeated PDF imports update source strings while retaining reviewed Hito coordinates and status.
 

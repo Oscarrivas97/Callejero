@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from .road_graph import PathResult, RoadGraph, validate_option
+from .road_graph import GraphLike, PathResult, validate_option
 from .routes import Option, QuestionCheck, check_question
 from .settings import QualitySettings
 
@@ -14,7 +14,7 @@ class ValidatedQuestion:
 
 
 def validate_question_on_graph(
-    graph: RoadGraph,
+    graph: GraphLike,
     origin: str,
     destination: str,
     question_type: str,

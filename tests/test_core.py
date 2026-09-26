@@ -16,7 +16,7 @@ from callejero_generator.settings import load_quality_settings, load_speed_defau
 
 def test_packaged_schemas_match_documented_schemas():
     root = Path(__file__).resolve().parents[1]
-    for name in ("generator_schema.sql", "app_export_schema.sql"):
+    for name in ("generator_schema.sql", "app_export_schema.sql", "osm_graph_schema.sql"):
         assert (root / "sql" / name).read_bytes() == (
             root / "src" / "callejero_generator" / "schema" / name
         ).read_bytes()

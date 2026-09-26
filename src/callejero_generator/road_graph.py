@@ -4,6 +4,7 @@ import heapq
 import itertools
 import re
 from dataclasses import dataclass
+from typing import Protocol
 
 
 @dataclass(frozen=True)
@@ -26,12 +27,21 @@ class PathResult:
     estimated_time_s: float | None
 
 
+class GraphLike(Protocol):
+    def get_edge(self, edge_id: str) -> RoadEdge | None: ...
+    def iter_outgoing(self, node: str) -> list[RoadEdge]: ...
+    def is_forbidden(self, incoming_id: str, outgoing_id: str) -> bool: ...
+    def is_turn_uncertain(self, incoming_id: str, outgoing_id: str) -> bool: ...
+    def travel_time_s(self, edge: RoadEdge) -> float: ...
+
+
 class RoadGraph:
     def __init__(self, speed_defaults_kmh: dict[str, float]):
         self.speed_defaults_kmh = speed_defaults_kmh
         self.edges: dict[str, RoadEdge] = {}
         self.outgoing: dict[str, list[RoadEdge]] = {}
         self.forbidden_turns: set[tuple[str, str]] = set()
+        self.uncertain_incoming_edges: set[str] = set()
 
     def add_edge(self, edge: RoadEdge) -> None:
         if edge.edge_id in self.edges:
@@ -56,6 +66,18 @@ class RoadGraph:
             raise ValueError(f"No usable speed for highway class {edge.highway}")
         return edge.length_m * 3.6 / speed
 
+    def get_edge(self, edge_id: str) -> RoadEdge | None:
+        return self.edges.get(edge_id)
+
+    def iter_outgoing(self, node: str) -> list[RoadEdge]:
+        return self.outgoing.get(node, [])
+
+    def is_forbidden(self, incoming_id: str, outgoing_id: str) -> bool:
+        return (incoming_id, outgoing_id) in self.forbidden_turns
+
+    def is_turn_uncertain(self, incoming_id: str, outgoing_id: str) -> bool:
+        return incoming_id in self.uncertain_incoming_edges
+
 
 def parse_maxspeed_kmh(value: str | None) -> float | None:
     """Read simple OSM speed values; symbolic or ambiguous values use a class default."""
@@ -71,18 +93,20 @@ def parse_maxspeed_kmh(value: str | None) -> float | None:
     return speed * 1.609344 if (match[2] or "").lower() == "mph" else speed
 
 
-def validate_physical_path(graph: RoadGraph, edge_ids: list[str], origin: str,
+def validate_physical_path(graph: GraphLike, edge_ids: list[str], origin: str,
                            destination: str) -> PathResult:
     node = origin
     previous: str | None = None
     distance = time = 0.0
     for edge_id in edge_ids:
-        edge = graph.edges.get(edge_id)
+        edge = graph.get_edge(edge_id)
         if edge is None:
             return PathResult("INVALID", "UNKNOWN_EDGE", (), None, None)
         if edge.from_node != node:
             return PathResult("INVALID", "DISCONNECTED_OR_WRONG_DIRECTION", (), None, None)
-        if previous is not None and (previous, edge_id) in graph.forbidden_turns:
+        if previous is not None and graph.is_turn_uncertain(previous, edge_id):
+            return PathResult("INDETERMINATE", "UNSUPPORTED_RESTRICTION", (), None, None)
+        if previous is not None and graph.is_forbidden(previous, edge_id):
             return PathResult("INVALID", "PROHIBITED_TURN", (), None, None)
         node = edge.to_node
         previous = edge_id
@@ -93,7 +117,7 @@ def validate_physical_path(graph: RoadGraph, edge_ids: list[str], origin: str,
     return PathResult("VALID", None, tuple(edge_ids), distance, time)
 
 
-def validate_option(graph: RoadGraph, origin: str, destination: str,
+def validate_option(graph: GraphLike, origin: str, destination: str,
                     espacio_ids: tuple[int, ...], *, max_states: int = 500_000) -> PathResult:
     """Shortest legal path whose projected sequence equals the displayed sequence."""
     if not espacio_ids or any(a == b for a, b in itertools.pairwise(espacio_ids)):
@@ -107,6 +131,7 @@ def validate_option(graph: RoadGraph, origin: str, destination: str,
     serial = itertools.count()
     queue: list[tuple[float, int, tuple[str, int, str | None]]] = [(0.0, next(serial), start)]
     visited = 0
+    saw_uncertain_turn = False
     while queue:
         cost, _, state = heapq.heappop(queue)
         if cost > best[state]:
@@ -122,10 +147,17 @@ def validate_option(graph: RoadGraph, origin: str, destination: str,
                 cursor, edge_id = predecessor[cursor]
                 ids.append(edge_id)
             ids.reverse()
-            return PathResult("VALID", None, tuple(ids),
-                              sum(graph.edges[item].length_m for item in ids), cost)
-        for edge in graph.outgoing.get(node, ()):
-            if incoming_id is not None and (incoming_id, edge.edge_id) in graph.forbidden_turns:
+            distance = 0.0
+            for edge_id in ids:
+                path_edge = graph.get_edge(edge_id)
+                assert path_edge is not None
+                distance += path_edge.length_m
+            return PathResult("VALID", None, tuple(ids), distance, cost)
+        for edge in graph.iter_outgoing(node):
+            if incoming_id is not None and graph.is_turn_uncertain(incoming_id, edge.edge_id):
+                saw_uncertain_turn = True
+                continue
+            if incoming_id is not None and graph.is_forbidden(incoming_id, edge.edge_id):
                 continue
             next_index = _advance(espacio_ids, index, edge.espacio_id)
             if next_index is None:
@@ -136,6 +168,8 @@ def validate_option(graph: RoadGraph, origin: str, destination: str,
                 best[target] = next_cost
                 predecessor[target] = (state, edge.edge_id)
                 heapq.heappush(queue, (next_cost, next(serial), target))
+    if saw_uncertain_turn:
+        return PathResult("INDETERMINATE", "UNSUPPORTED_RESTRICTION", (), None, None)
     return PathResult("INVALID", "NO_LEGAL_PATH", (), None, None)
 
 

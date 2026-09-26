@@ -13,6 +13,14 @@ class QualitySettings:
     min_advantage_seconds: float
 
 
+@dataclass(frozen=True)
+class OSMSettings:
+    pbf_path: Path
+    source_url: str
+    sha256: str
+    snapshot_date: str
+
+
 def load_quality_settings(path: str | Path) -> QualitySettings:
     with Path(path).open(encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
@@ -49,3 +57,14 @@ def load_speed_defaults(path: str | Path) -> dict[str, float]:
     if not speeds or any(speed <= 0 for speed in speeds.values()):
         raise ValueError("Every highway speed default must be positive")
     return speeds
+
+
+def load_osm_settings(path: str | Path) -> OSMSettings:
+    with Path(path).open(encoding="utf-8") as handle:
+        config = yaml.safe_load(handle)
+    try:
+        osm = config["osm"]
+        return OSMSettings(Path(osm["pbf_path"]), str(osm["source_url"]),
+                           str(osm["sha256"]), str(osm["snapshot_date"]))
+    except (KeyError, TypeError) as error:
+        raise ValueError(f"Invalid OSM settings in {path}") from error
