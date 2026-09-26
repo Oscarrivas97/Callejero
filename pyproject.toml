@@ -16,6 +16,7 @@ dependencies = [
   "networkx>=3.3",
   "geopandas>=1.0",
   "pyproj>=3.6",
+  "pdfplumber>=0.11",
 ]
 
 [project.optional-dependencies]
@@ -24,7 +25,17 @@ dev = [
   "pytest-cov>=5.0",
   "ruff>=0.6",
   "mypy>=1.10",
+  "types-PyYAML>=6.0",
 ]
+
+[project.scripts]
+callejero = "callejero_generator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+callejero_generator = ["schema/*.sql"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

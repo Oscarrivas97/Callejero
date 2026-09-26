@@ -4,9 +4,9 @@ project:
   schema_version: 1
 
 sources:
-  espacios_pdf: data/source/EspaciosCirculatorios.pdf
-  hitos_pdf: data/source/Hitos.pdf
-  sample_exam_pdf: data/source/sample_exam.pdf
+  espacios_pdf: assets/EspaciosCirculatorios_azul_claro_columna_A.pdf
+  hitos_pdf: assets/Hitos_blanco_amarillo_A_G_con_direcciones_coloreadas.pdf
+  sample_exam_pdf: assets/SIMULACRO_CALLEJERO_BOMBERO_CONDUCTOR_SEPTIEMBRE_2026.pdf
 
 osm:
   pbf_path: data/osm/madrid-region.osm.pbf
