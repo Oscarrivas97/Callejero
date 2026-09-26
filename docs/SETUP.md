@@ -11,6 +11,7 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev]'
 .venv/bin/python -m pytest
 .venv/bin/python -m ruff check src tests
+.venv/bin/python -m mypy src
 ```
 
 This uses the dependencies declared in `pyproject.toml`. The environment is local to `.venv` and ignored by Git.
@@ -33,6 +34,28 @@ Build the offline road graph after import:
 ```bash
 .venv/bin/callejero build-osm-graph
 ```
+
+## Reproduce the question preview
+
+The pinned OSM graph and imported PDFs are required. Generate the four provisional
+Hito route questions with:
+
+```bash
+.venv/bin/callejero generate-preview --output-prefix docs/QUESTION_PREVIEW
+```
+
+The command checks the pinned PBF fingerprint, attaches the Hitos listed in
+`config/preview_hitos.yaml` to nearby road nodes, finds legal physical routes,
+and projects each route into canonical Espacios. It swaps two street pairs to
+create the wrong options, then validates all three options on the directed
+graph. A configured pair that cannot produce exactly one valid option fails
+the command. The generated Markdown is for human review; its JSON companion
+contains IDs, physical edge IDs, and validation results for inspection.
+
+These attachments use exact OSM POI name matches and proximity. Their entrances,
+road-side access, and PDF address correspondence still need manual review.
+Neither the preview nor its attachments enter the approved-question database.
+The turn-restriction and mapping limitations in [OSM.md](OSM.md) also apply.
 
 You can override source paths with `--espacios` and `--hitos` on `import-pdfs`, or `--pdf` on `extract-exam`. The default paths come from the YAML config. Repeated PDF imports update source strings while retaining reviewed Hito coordinates and status.
 
@@ -78,14 +101,12 @@ When a later generation stage has created a question with status `READY_FOR_REVI
 .venv/bin/callejero export
 ```
 
-The export creates `data/exports/callejero_questions.sqlite` from approved questions only. It checks option count, canonical Espacio IDs, correct answer, and route mode rules before replacing the app database. It reads quality thresholds from the YAML config and writes a config hash and generator-run provenance into `export_metadata`. The constrained-path validator is implemented for directed graph data and tested on fixtures; no Madrid OSM graph or generated questions exist yet.
+The export creates `data/exports/callejero_questions.sqlite` from approved questions only. It checks option count, canonical Espacio IDs, correct answer, and route mode rules before replacing the app database. It reads quality thresholds from the YAML config and writes a config hash and generator-run provenance into `export_metadata`. The constrained-path validator now uses the Madrid graph for the provisional preview. The approval workflow is not yet connected to generated questions.
 
 ## Next implementation stages
 
-1. Inspect the actual PDF layouts and add source-specific extractors with page references and review reports.
-2. Import an offline Madrid OSM extract into the directed graph, including one-way and turn restrictions.
-3. Geocode Hitos, review candidate snaps, and persist approved attachments.
-4. Map OSM edges to Espacios, requiring review for ambiguous names.
-5. Connect graph-backed option validation to route alternatives, question generation, and map-based review.
+1. Review candidate Hito entrances and road attachments, then persist approved attachments.
+2. Resolve unsupported turn restrictions and ambiguous street mappings.
+3. Add map-based review and connect approved graph-backed questions to export.
 
 Do not approve questions until option validity has been computed from the Madrid graph and its results have been reviewed.
